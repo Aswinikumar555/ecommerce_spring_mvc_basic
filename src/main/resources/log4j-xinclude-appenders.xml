@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Appenders>   
+    <Raven name="Sentry">
+        <dsn>            
+            https://7e872bc5c09b477bb5eadceb92813018@sentry.io/1237154
+        </dsn>
+        <tags>
+            tag1:value1,tag2:value2
+        </tags>
+    </Raven>         
+    <Console name="console-log" target="SYSTEM_OUT">
+        <PatternLayout pattern="[%d{ISO8601}] [${application.name}] [${filter.name}] [%level] [%tid] [%tn] [%MDC{correlation-id}] [%MDC{callingUserId}] %c{1} %M - %.-10000m%n  %throwable{15}"/>
+    </Console>   
+    <Raven name="Sentry">
+        <dsn>
+            https://7e872bc5c09b477bb5eadceb92813018@sentry.io/1237154
+        </dsn>
+    </Raven>      
+<!--<appender name="logstash" class="org.apache.log4j.net.SocketAppender">
+        <param name="RemoteHost" value="localhost" />
+        <param name="Port" value="3456" />
+        <param name="ReconnectionDelay" value="10000" />
+    </appender>-->
+<!--<Socket name="logstash" host="10.0.1.208" port="3456" connectTimeoutMillis="10000">-->
+       <!--<LogStashLayout></LogStashLayout>-->
+    <!--</Socket>-->
+</Appenders>
+
+<!--reference code
+        <DefaultRolloverStrategy max="10">
+            <Delete basePath="../logs">
+                <IfFileName glob="manager*.log">
+                    <IfLastModified age="1d" />
+                    <IfAccumulatedFileCount exceeds="1" />
+                </IfFileName> 
+            </Delete>        
+        </DefaultRolloverStrategy>    
+
+-->

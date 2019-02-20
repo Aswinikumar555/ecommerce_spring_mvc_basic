@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Loggers>
+    <Root level="all" additivity="false">
+        <AppenderRef ref="console-log" level="info"/>
+        <AppenderRef ref="Sentry" level="error" />             
+        <!--<appender-ref ref="info-log" level="info"/>-->
+        <!--<appender-ref ref="logstash" level="info"/>-->
+    </Root>    
+</Loggers>
