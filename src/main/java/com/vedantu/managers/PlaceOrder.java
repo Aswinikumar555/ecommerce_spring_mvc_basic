@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.vedantu.daos.AbstractMongoClientFactory;
 import com.vedantu.daos.AbstractSqlDAO;
 import com.vedantu.daos.CartMongoDAO;
 import com.vedantu.daos.CustomerMongoDAO;
@@ -34,11 +35,10 @@ import com.vedantu.utils.LogFactory;
 @RequestMapping("test4")
 public class PlaceOrder {
 	
-	@Autowired
-	private LogFactory logFactory;
-
-	@SuppressWarnings("static-access")
-	private Logger logger = logFactory.getLogger(AbstractSqlDAO.class);
+	 @Autowired
+	    private LogFactory logFactory;
+	   @SuppressWarnings("static-access")
+	    private final Logger logger = logFactory.getLogger(AbstractMongoClientFactory.class);
 	 @Autowired
 	    private CartMongoDAO cartMongoDAO;
 	 @Autowired
@@ -112,8 +112,9 @@ public class PlaceOrder {
 	 @RequestMapping(value = "/cancelOrder", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	   @ResponseBody
 	   public String cancelOrder(@RequestBody OrderReq param) throws Exception {
-			OrderMongo order_obj = orderMongoDAO.getById(param.getId());	
-			if (order_obj.getOrderstate().equals("PAID")) {
+			OrderMongo order_obj = orderMongoDAO.getById(param.getId());
+		if(order_obj != null) {	
+			if (order_obj.getOrderstate().equals(Orderstate.PAID)) {
 				Set<String> ordIds = order_obj.getProductIds();
 			    List<ProductMongo> prdts = productMongoDAO.getProductsFromIds(ordIds);
 			    
@@ -141,4 +142,8 @@ public class PlaceOrder {
 				return "order_state in canceled";
 			}
 		}
-	 }
+		else {
+			return "OrderNumber doesnot exist";
+		}
+	}
+ }
