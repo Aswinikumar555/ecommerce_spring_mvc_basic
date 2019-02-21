@@ -38,113 +38,122 @@ public class CartController {
 
 	@SuppressWarnings("static-access")
 	private Logger logger = logFactory.getLogger(AbstractSqlDAO.class);
-	
-	 @Autowired
-	    private CartMongoDAO cartMongoDAO;
-	 @Autowired
-	    private ProductMongoDAO productMongoDAO;
-	 //
-	 @Autowired
-	    private OrderMongoDAO orderMongoDAO;
-	 @Autowired
-	    private CustomerMongoDAO customerMongoDAO;
+
+	@Autowired
+	private CartMongoDAO cartMongoDAO;
+	@Autowired
+	private ProductMongoDAO productMongoDAO;
+	//
+	@Autowired
+	private OrderMongoDAO orderMongoDAO;
+	@Autowired
+	private CustomerMongoDAO customerMongoDAO;
+
 //Cart APIS		
-		@RequestMapping(value = "/addCart", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-		   @ResponseBody
-		   public String addParam(@RequestBody CartReq param) throws Exception {
-		       
+	@RequestMapping(value = "/addCart", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+	@ResponseBody
+	public String addParam(@RequestBody CartReq param) throws Exception {
 
-CustomerMongo customer_details = customerMongoDAO.getById(param.getCustomerid());
-     if(customer_details != null) {
-        CartMongo cust_cart = cartMongoDAO.getByCustomerId(param.getCustomerid());
-        if(cust_cart == null ) {
-        		
-		        List<CartItem> cItems =new   ArrayList<CartItem>();
-		        cItems.add(param.getCartitems());
-		        CartMongo cart_obj = new CartMongo();
-		        cart_obj.setCustomerid(param.getCustomerid());
-		        cart_obj.setCartitems(cItems);
-		        cartMongoDAO.create(cart_obj);
-		        return "added";
-	        }
-        else {
-        		
-			   // CartMongo cart = cartMongoDAO.getByCustomerId(param.getCustomerid());
-			    List<CartItem> citem_list =cust_cart.getCartitems();
-			    
-			    if(citem_list != null && !citem_list.isEmpty()){ 
-			       if(citem_list.contains(param.getCartitems())) {
-					        for(CartItem cartItem:citem_list) {
-					        	if(cartItem.equals(param.getCartitems())) {
-					                cartItem.setQuantity(cartItem.getQuantity()+param.getCartitems().getQuantity());
-					                break;
-					        	}
-				        }
-			        }
-			       else {
-			        	citem_list.add(param.getCartitems());
-			        	cust_cart.setCartitems(citem_list);
-			           }
-			       
-			    }
-			    else {
-			    	List<CartItem> cItems =new   ArrayList<CartItem>();
-			    	cItems.add(param.getCartitems());
-			    	cust_cart.setCartitems(cItems);
-			    }
-			   cartMongoDAO.create(cust_cart);
+		CustomerMongo customer_details = customerMongoDAO.getById(param.getCustomerid());
+		if (customer_details != null) {
+			CartMongo cust_cart = cartMongoDAO.getByCustomerId(param.getCustomerid());
+			if (cust_cart == null) {
+
+				List<CartItem> cItems = new ArrayList<CartItem>();
+				cItems.add(param.getCartitems());
+				CartMongo cart_obj = new CartMongo();
+				cart_obj.setCustomerid(param.getCustomerid());
+				cart_obj.setCartitems(cItems);
+				cartMongoDAO.create(cart_obj);
+				return "added";
+			} else {
+
+				// CartMongo cart = cartMongoDAO.getByCustomerId(param.getCustomerid());
+				List<CartItem> citem_list = cust_cart.getCartitems();
+
+				if (citem_list != null && !citem_list.isEmpty()) {
+					if (citem_list.contains(param.getCartitems())) {
+						for (CartItem cartItem : citem_list) {
+							if (cartItem.equals(param.getCartitems())) {
+								cartItem.setQuantity(cartItem.getQuantity() + param.getCartitems().getQuantity());
+								break;
+							}
+						}
+					} else {
+						citem_list.add(param.getCartitems());
+						cust_cart.setCartitems(citem_list);
+					}
+
+				} else {
+					List<CartItem> cItems = new ArrayList<CartItem>();
+					cItems.add(param.getCartitems());
+					cust_cart.setCartitems(cItems);
+				}
+				cartMongoDAO.create(cust_cart);
 				return "Cart updated";
-			    }
-	
-	       }
-        else {
-            return "Check CustomerId once";
-        }
-	}
-		
-		//update
-		   @RequestMapping(value="/updateCart", method = RequestMethod.POST,consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-		   @ResponseBody
-		   public String updateParam(@RequestBody CartReq param) throws Exception {
-			   
-			   CartMongo e2 =cartMongoDAO.getById(param.getId());
-		        e2.setCustomerid(param.getCustomerid());
-		        //e2.setCartitems(param.getCartitems());
-		       
-		        cartMongoDAO.update(e2,null);
+			}
 
-		       return "UpdateSuccess";
-			   
-			  }
-		 //delete
-		   @RequestMapping(value="/deleteCart", method = RequestMethod.POST,consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-		   @ResponseBody
-		   public String deleteParam(@RequestBody CartReq param) throws Exception {
-			 CustomerMongo customer_details = customerMongoDAO.getById(param.getCustomerid());
-			     if(customer_details != null) {
-			    	 CartMongo cust_cart =cartMongoDAO.getByCustomerId(param.getCustomerid());
-			    	 List<CartItem> citem_list =cust_cart.getCartitems();
-			    	 if(citem_list != null && !citem_list.isEmpty()){ 
-					       if(citem_list.contains(param.getCartitems())) {
-							        for(CartItem cartItem:citem_list) {
-							        	if(cartItem.equals(param.getCartitems())) {
-							        		citem_list.remove(param.getCartitems());
-							                cust_cart.setCartitems(citem_list);
-							                cartMongoDAO.create(cust_cart);
-							        		break;
-							        	}
-						        }
-					        }
-					       
-					    }
-					    else {
-					    	return "Customer Cart is Empty";
-					    }
-			     } 
-			     else {
-			    	 return "Customer doesn't exist";
-			     }
-		       return "Delete Success";
-		   }
-		   
+		} else {
+			return "Check CustomerId once";
+		}
+	}
+
+	// update
+	@RequestMapping(value = "/updateCart", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+	@ResponseBody
+	public String updateParam(@RequestBody CartReq param) throws Exception {
+
+		CartMongo cart = cartMongoDAO.getByCustomerId(param.getCustomerid());
+
+		List<CartItem> citem = cart.getCartitems();
+
+		if (citem.contains(param.getCartitems())) {
+			for (CartItem cartItem : citem) {
+				if (cartItem.equals(param.getCartitems())) {
+					cartItem.setQuantity(param.getCartitems().getQuantity());
+					cartItem.setProductid(param.getCartitems().getProductid());
+					break;
+
+				}
+			}
+		} else {
+			citem.add(param.getCartitems());
+		}
+		cart.setCartitems(citem);
+
+		cartMongoDAO.update(cart, null);
+
+		return "Success";
+
+	}
+
+	// delete
+	@RequestMapping(value = "/deleteCart", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+	@ResponseBody
+	public String deleteParam(@RequestBody CartReq param) throws Exception {
+		CustomerMongo customer_details = customerMongoDAO.getById(param.getCustomerid());
+		if (customer_details != null) {
+			CartMongo cust_cart = cartMongoDAO.getByCustomerId(param.getCustomerid());
+			List<CartItem> citem_list = cust_cart.getCartitems();
+			if (citem_list != null && !citem_list.isEmpty()) {
+				if (citem_list.contains(param.getCartitems())) {
+					for (CartItem cartItem : citem_list) {
+						if (cartItem.equals(param.getCartitems())) {
+							citem_list.remove(param.getCartitems());
+							cust_cart.setCartitems(citem_list);
+							cartMongoDAO.create(cust_cart);
+							break;
+						}
+					}
+				}
+
+			} else {
+				return "Customer Cart is Empty";
+			}
+		} else {
+			return "Customer doesn't exist";
+		}
+		return "Delete Success";
+	}
+
 }
