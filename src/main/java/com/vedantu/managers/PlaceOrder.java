@@ -53,71 +53,76 @@ public class PlaceOrder {
 	@ResponseBody
 	public String addplaceOrder(@RequestBody OrderReq param) throws Exception {
 
-		CartMongo c = cartMongoDAO.getByCustomerId(param.getCustomerid());
-		if (c != null) {
+		CartMongo cart_obj = cartMongoDAO.getByCustomerId(param.getCustomerid());
+		if (cart_obj != null) {
 
-			Set<String> ordIds = c.getProductIds();
+			Set<String> cart_pids = cart_obj.getProductIds();
 
-			List<ProductMongo> prdts = productMongoDAO.getProductsFromIds(ordIds);
+			List<ProductMongo> product_info = productMongoDAO.getProductsFromIds(cart_pids);
 
-			Map<String, Integer> cartmap = new HashMap<>();
-			for (CartItem cartItem : c.getCartitems()) {
-				cartmap.put(cartItem.getProductid(), cartItem.getQuantity());
+			Map<String, Integer> cart_map = new HashMap<>();
+			for (CartItem cartItem : cart_obj.getCartitems()) {
+				cart_map.put(cartItem.getProductid(), cartItem.getQuantity());
 			}
 
-			List<CartItem> citem_list = c.getCartitems();
+			List<CartItem> citem_list = cart_obj.getCartitems();
 			List<OrderItem> orderitem_list = new ArrayList<OrderItem>();
-			logger.info("first products  " + prdts);
-			
-			for (ProductMongo prdt : prdts) {
-				if (prdt.getQuantity() < cartmap.get(prdt.getId())) {
-					
+			logger.info("first products  " + product_info);
+
+			for (ProductMongo prdt : product_info) {
+				if (prdt.getQuantity() < cart_map.get(prdt.getId())) {
+
 					// throw new RuntimeException("item not in stock for " + prdt.getName());
 				} else {
 					// adding order items
-					int cart_quantity = cartmap.get(prdt.getId());
+					int cart_quantity = cart_map.get(prdt.getId());
 					orderitem_list.add(new OrderItem(prdt.getId(), cart_quantity, prdt.getPrice()));
 
 					// remove from cartitem_list
 					citem_list.remove(new CartItem(prdt.getId(), cart_quantity));
-					
-					prdt.setQuantity(prdt.getQuantity() - cartmap.get(prdt.getId()));
+
+					prdt.setQuantity(prdt.getQuantity() - cart_map.get(prdt.getId()));
 				}
 			}
-			
-			// add Order
-			OrderMongo o = new OrderMongo();
-			o.setOrderitems(orderitem_list);
-			o.setCustomerid(param.getCustomerid());
-			o.setTotalprice(param.getTotalprice());
 
-			// checking amount in customer
-			CustomerMongo customer = customerMongoDAO.getById(o.getCustomerid());
-			if (o.getTotalprice() <= customer.getAmount()) {
+			if (orderitem_list != null && !orderitem_list.isEmpty()) {
 
-				// subtract the customer amount
-				customer.setAmount(customer.getAmount() - o.getTotalprice());
-				customerMongoDAO.create(customer);
-				for (ProductMongo prdt1 : prdts) {
+				// add Order
+				OrderMongo o = new OrderMongo();
+				o.setOrderitems(orderitem_list);
+				o.setCustomerid(param.getCustomerid());
+				o.setTotalprice(param.getTotalprice());
 
-					// subtract the quantity
-					productMongoDAO.create(prdt1);
+				// checking amount in customer
+				CustomerMongo customer = customerMongoDAO.getById(o.getCustomerid());
+				if (o.getTotalprice() <= customer.getAmount()) {
+
+					// subtract the customer amount
+					customer.setAmount(customer.getAmount() - o.getTotalprice());
+					customerMongoDAO.create(customer);
+					for (ProductMongo prdt1 : product_info) {
+
+						// subtract the quantity
+						productMongoDAO.create(prdt1);
+					}
+					o.setOrderstate(Orderstate.PAID);
+					orderMongoDAO.create(o);
+
+					// clear the cart
+					if (citem_list != null && !citem_list.isEmpty()) {
+						cart_obj.setCartitems(citem_list);
+					} else {
+						cart_obj.setCartitems(null);
+					}
+					cartMongoDAO.create(cart_obj);
+				} else {
+					return "Less amount";
 				}
-				o.setOrderstate(Orderstate.PAID);
-				orderMongoDAO.create(o);
-
-				// clear the cart
-				if(citem_list != null) {
-				c.setCartitems(citem_list);
-				}else {
-					c.setCartitems(null);
-				}
-				cartMongoDAO.create(c);
+				return "Order Placed Successfully";
 			} else {
-				return "Less amount";
+				return "quantity is high for all products";
 			}
-			logger.info("after deletion  "+prdts);
-			return "Order Placed Successfully";
+
 		} else {
 			return "Cart does not exist for Customer";
 		}
