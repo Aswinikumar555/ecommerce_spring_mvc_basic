@@ -106,22 +106,27 @@ public class CartController {
 		CartMongo cart = cartMongoDAO.getByCustomerId(param.getCustomerid());
 
 		List<CartItem> citem = cart.getCartitems();
+		
+		if (citem != null || !citem.isEmpty()) {
+			if (citem.contains(param.getCartitems())) {
+				for (CartItem cartItem : citem) {
+					if (cartItem.equals(param.getCartitems())) {
+						cartItem.setQuantity(param.getCartitems().getQuantity());
+						cartItem.setProductid(param.getCartitems().getProductid());
+						break;
 
-		if (citem.contains(param.getCartitems())) {
-			for (CartItem cartItem : citem) {
-				if (cartItem.equals(param.getCartitems())) {
-					cartItem.setQuantity(param.getCartitems().getQuantity());
-					cartItem.setProductid(param.getCartitems().getProductid());
-					break;
-
+					}
 				}
+			} else {
+				citem.add(param.getCartitems());
 			}
+			cart.setCartitems(citem);
 		} else {
-			citem.add(param.getCartitems());
+			List<CartItem> cItems = new ArrayList<CartItem>();
+			cItems.add(param.getCartitems());
+			cart.setCartitems(cItems);
 		}
-		cart.setCartitems(citem);
-
-		cartMongoDAO.update(cart, null);
+		cartMongoDAO.create(cart);
 
 		return "Success";
 
