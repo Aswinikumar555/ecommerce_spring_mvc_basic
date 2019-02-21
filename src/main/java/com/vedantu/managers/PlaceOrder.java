@@ -65,47 +65,58 @@ public class PlaceOrder {
 				cartmap.put(cartItem.getProductid(), cartItem.getQuantity());
 			}
 
+			List<CartItem> citem_list = c.getCartitems();
+			List<OrderItem> orderitem_list = new ArrayList<OrderItem>();
+			logger.info("first products  " + prdts);
+			
 			for (ProductMongo prdt : prdts) {
 				if (prdt.getQuantity() < cartmap.get(prdt.getId())) {
-					throw new RuntimeException("item not in stock for " + prdt.getName());
+					
+					// throw new RuntimeException("item not in stock for " + prdt.getName());
 				} else {
-					List<OrderItem> orderitem_list = new ArrayList<OrderItem>();
+					// adding order items
+					int cart_quantity = cartmap.get(prdt.getId());
+					orderitem_list.add(new OrderItem(prdt.getId(), cart_quantity, prdt.getPrice()));
 
-					for (ProductMongo prdt1 : prdts) {
-						// adding order items
-						int cart_quantity = cartmap.get(prdt1.getId());
-						orderitem_list.add(new OrderItem(prdt1.getId(), cart_quantity, prdt1.getPrice()));
-					}
-					// add Order
-					OrderMongo o = new OrderMongo();
-					o.setOrderitems(orderitem_list);
-					o.setCustomerid(param.getCustomerid());
-					o.setTotalprice(param.getTotalprice());
-
-					// checking amount in customer
-					CustomerMongo customer = customerMongoDAO.getById(o.getCustomerid());
-					if (o.getTotalprice() <= customer.getAmount()) {
-
-						// subtract the customer amount
-						customer.setAmount(customer.getAmount() - o.getTotalprice());
-						customerMongoDAO.create(customer);
-						for (ProductMongo prdt1 : prdts) {
-
-							// subtract the quantity
-							prdt1.setQuantity(prdt1.getQuantity() - cartmap.get(prdt1.getId()));
-							productMongoDAO.create(prdt1);
-						}
-						o.setOrderstate(Orderstate.PAID);
-						orderMongoDAO.create(o);
-
-						// clear the cart
-						c.setCartitems(null);
-						cartMongoDAO.create(c);
-					} else {
-						return "Less amount";
-					}
+					// remove from cartitem_list
+					citem_list.remove(new CartItem(prdt.getId(), cart_quantity));
+					
+					prdt.setQuantity(prdt.getQuantity() - cartmap.get(prdt.getId()));
 				}
 			}
+			
+			// add Order
+			OrderMongo o = new OrderMongo();
+			o.setOrderitems(orderitem_list);
+			o.setCustomerid(param.getCustomerid());
+			o.setTotalprice(param.getTotalprice());
+
+			// checking amount in customer
+			CustomerMongo customer = customerMongoDAO.getById(o.getCustomerid());
+			if (o.getTotalprice() <= customer.getAmount()) {
+
+				// subtract the customer amount
+				customer.setAmount(customer.getAmount() - o.getTotalprice());
+				customerMongoDAO.create(customer);
+				for (ProductMongo prdt1 : prdts) {
+
+					// subtract the quantity
+					productMongoDAO.create(prdt1);
+				}
+				o.setOrderstate(Orderstate.PAID);
+				orderMongoDAO.create(o);
+
+				// clear the cart
+				if(citem_list != null) {
+				c.setCartitems(citem_list);
+				}else {
+					c.setCartitems(null);
+				}
+				cartMongoDAO.create(c);
+			} else {
+				return "Less amount";
+			}
+			logger.info("after deletion  "+prdts);
 			return "Order Placed Successfully";
 		} else {
 			return "Cart does not exist for Customer";
